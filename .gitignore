@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+gradle/
+gradle-*/
+gradle.zip
+
+# Java
+*.class
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Env
+.env
+application-local.yml

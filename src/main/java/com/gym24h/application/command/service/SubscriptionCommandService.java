@@ -153,6 +153,129 @@ public class SubscriptionCommandService {
         }
     }
 
+    @Transactional
+    public void cancelSubscriptionAtPeriodEnd(UUID userIdValue) {
+        UserId userId = new UserId(userIdValue);
+        Subscription subscription = subscriptionRepository.findLatestByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCodes.RESOURCE_NOT_FOUND,
+                        "Subscription not found",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+            throw new BusinessException(
+                    ErrorCodes.FORBIDDEN,
+                    "Only ACTIVE subscriptions can request cancellation",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        Instant now = Instant.now();
+        Instant cancellationWindowEnd = subscription.getCurrentPeriodStartAt().plusSeconds(15L * 24L * 60L * 60L);
+        if (now.isAfter(cancellationWindowEnd)) {
+            throw new BusinessException(
+                    ErrorCodes.FORBIDDEN,
+                    "已过本期前 15 天退会窗口，请下个周期再试，下期费用将正常扣除",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        if (subscription.getCancellationRequestedAt() != null) {
+            return;
+        }
+
+        if (subscription.getStripeSubscriptionId() == null || subscription.getStripeSubscriptionId().isBlank()) {
+            throw new BusinessException(
+                    ErrorCodes.RESOURCE_NOT_FOUND,
+                    "Stripe subscription not found",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        try {
+            stripeClient.scheduleCancellationAtPeriodEnd(subscription.getStripeSubscriptionId());
+        } catch (Exception e) {
+            log.warn("Stripe 调用失败，跳过网关请求继续更新本地状态: {}", e.getMessage());
+        }
+
+        Subscription updated = subscriptionDomainService.requestCancellation(subscription, now);
+        subscriptionRepository.save(updated);
+    }
+
+    @Transactional
+    public void revokeSubscriptionCancellation(UUID userIdValue) {
+        UserId userId = new UserId(userIdValue);
+        Subscription subscription = subscriptionRepository.findLatestByUserId(userId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCodes.RESOURCE_NOT_FOUND,
+                        "Subscription not found",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+            throw new BusinessException(
+                    ErrorCodes.FORBIDDEN,
+                    "Only ACTIVE subscriptions can revoke cancellation",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        if (subscription.getCancellationRequestedAt() == null) {
+            throw new BusinessException(
+                    ErrorCodes.FORBIDDEN,
+                    "Cancellation has not been requested",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        if (subscription.getStripeSubscriptionId() == null || subscription.getStripeSubscriptionId().isBlank()) {
+            throw new BusinessException(
+                    ErrorCodes.RESOURCE_NOT_FOUND,
+                    "Stripe subscription not found",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        try {
+            stripeClient.revokeCancellationAtPeriodEnd(subscription.getStripeSubscriptionId());
+        } catch (Exception e) {
+            log.warn("Stripe 调用失败，跳过网关请求继续更新本地状态: {}", e.getMessage());
+        }
+
+        Subscription updated = subscriptionDomainService.revokeCancellation(subscription);
+        subscriptionRepository.save(updated);
+    }
+
+    @Transactional
+    public void forceTerminateSubscription(UUID userIdValue, String reason) {
+    if (reason == null || reason.isBlank()) {
+        throw new BusinessException(
+            ErrorCodes.VALIDATION_ERROR,
+            "reason must not be blank",
+            HttpStatus.BAD_REQUEST
+        );
+    }
+
+    UserId userId = new UserId(userIdValue);
+    Subscription subscription = subscriptionRepository.findLatestByUserId(userId)
+        .orElseThrow(() -> new BusinessException(
+            ErrorCodes.RESOURCE_NOT_FOUND,
+            "Subscription not found",
+            HttpStatus.NOT_FOUND
+        ));
+
+    Subscription updated = subscriptionDomainService.forceTerminate(subscription, Instant.now());
+    subscriptionRepository.save(updated);
+    auditLogJdbcRepository.save(
+        userIdValue,
+        "FORCE_TERMINATED",
+        "SUCCESS",
+        reason,
+        null
+    );
+    }
+
     @Async
     @Transactional
     public void handleVerifiedWebhookEventAsync(Event event) {

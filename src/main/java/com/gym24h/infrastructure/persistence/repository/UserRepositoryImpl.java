@@ -7,6 +7,7 @@ import com.gym24h.infrastructure.persistence.entity.UserEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -23,6 +24,14 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findById(UserId userId) {
         return jpaUserRepository.findByIdAndDeletedFalse(userId.value())
                 .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findAll() {
+        return jpaUserRepository.findByDeletedFalseOrderByCreatedAtDesc().stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override

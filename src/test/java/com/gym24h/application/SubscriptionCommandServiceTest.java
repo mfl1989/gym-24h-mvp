@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -105,6 +106,28 @@ class SubscriptionCommandServiceTest {
         assertEquals(1, params.getLineItems().size());
         assertEquals("price_basic", params.getLineItems().getFirst().getPrice());
         assertEquals(1L, params.getLineItems().getFirst().getQuantity());
+    }
+
+    @Test
+    void shouldRejectCancellationOutsideFirstFifteenDays() throws Exception {
+        SubscriptionCommandService subscriptionCommandService = createService();
+        UUID userUuid = UUID.randomUUID();
+        Instant now = Instant.now();
+        User user = new User(new UserId(userUuid), "line-user-1", true, 0L, false);
+        Subscription subscription = Subscription.create(new UserId(userUuid), BillingCycle.THIRTY_DAYS, now.minusSeconds(20L * 24L * 60L * 60L))
+                .toBuilder()
+                .stripeSubscriptionId("sub_cancel_001")
+                .build();
+
+        when(subscriptionRepository.findLatestByUserId(new UserId(userUuid))).thenReturn(Optional.of(subscription));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> subscriptionCommandService.cancelSubscriptionAtPeriodEnd(userUuid)
+        );
+
+        assertEquals(ErrorCodes.FORBIDDEN, exception.getCode());
+        verify(stripeClient, never()).scheduleCancellationAtPeriodEnd(any());
     }
 
     private SubscriptionCommandService createService() {

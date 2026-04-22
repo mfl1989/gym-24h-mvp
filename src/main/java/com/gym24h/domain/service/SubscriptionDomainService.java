@@ -43,4 +43,14 @@ public class SubscriptionDomainService {
         subscription.requestCancellation(requestedAt);
         return subscription;
     }
+
+    public Subscription revokeCancellation(Subscription subscription) {
+        subscription.revokeCancellation();
+        return subscription;
+    }
+
+    public Subscription forceTerminate(Subscription subscription, Instant terminatedAt) {
+        subscription.forceTerminate(terminatedAt);
+        return subscription;
+    }
 }

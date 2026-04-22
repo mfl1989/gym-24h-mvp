@@ -1,6 +1,7 @@
 package com.gym24h.application.query.service;
 
 import com.gym24h.application.query.dto.CurrentUserProfileView;
+import com.gym24h.application.query.dto.MySubscriptionDetailsView;
 import com.gym24h.application.query.dto.UserInvoiceHistoryItemView;
 import com.gym24h.common.constant.ErrorCodes;
 import com.gym24h.common.exception.BusinessException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,7 +56,8 @@ public class UserProfileQueryService {
                 user.getDisplayName(),
                 user.getMembershipStatus(),
                 subscription.map(com.gym24h.domain.model.subscription.Subscription::getStatus).orElse(null),
-                subscription.map(com.gym24h.domain.model.subscription.Subscription::getValidUntil).orElse(null)
+                subscription.map(com.gym24h.domain.model.subscription.Subscription::getValidUntil).orElse(null),
+                subscription.map(value -> value.getCancellationRequestedAt() != null).orElse(false)
         );
     }
 
@@ -62,6 +65,24 @@ public class UserProfileQueryService {
         return invoiceRepository.findByUserIdOrderByBilledAtDesc(new UserId(userIdValue)).stream()
                 .map(this::toInvoiceHistoryItemView)
                 .toList();
+    }
+
+    public MySubscriptionDetailsView getMySubscriptionDetails(UUID userIdValue) {
+        var subscription = subscriptionRepository.findLatestByUserId(new UserId(userIdValue))
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCodes.RESOURCE_NOT_FOUND,
+                        "Subscription not found",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        Instant cancellationWindowEnd = subscription.getCurrentPeriodStartAt().plusSeconds(15L * 24L * 60L * 60L);
+        return new MySubscriptionDetailsView(
+                subscription.getStatus(),
+                subscription.getCurrentPeriodStartAt(),
+                subscription.getCurrentPeriodEndAt(),
+                subscription.getCancellationRequestedAt() != null,
+                !Instant.now().isAfter(cancellationWindowEnd)
+        );
     }
 
     private UserInvoiceHistoryItemView toInvoiceHistoryItemView(Invoice invoice) {

@@ -56,7 +56,8 @@ class MeControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.displayName").value("Frontend User"))
                 .andExpect(jsonPath("$.data.membershipStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$.data.subscriptionStatus").value("ACTIVE"))
-                .andExpect(jsonPath("$.data.subscriptionValidUntil").exists());
+                .andExpect(jsonPath("$.data.subscriptionValidUntil").exists())
+                .andExpect(jsonPath("$.data.cancelAtPeriodEnd").value(false));
     }
 
     @Test

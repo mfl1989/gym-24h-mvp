@@ -5,10 +5,12 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceCollection;
+import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.InvoiceListParams;
+import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -46,6 +48,28 @@ public class StripeClientImpl implements StripeClient {
                 .build();
         return Session.create(params, requestOptions);
     }
+
+        @Override
+        public Subscription scheduleCancellationAtPeriodEnd(String stripeSubscriptionId) throws StripeException {
+        RequestOptions requestOptions = RequestOptions.builder()
+            .setApiKey(secretKey)
+            .build();
+        SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
+            .setCancelAtPeriodEnd(true)
+            .build();
+        return Subscription.retrieve(stripeSubscriptionId, requestOptions).update(params, requestOptions);
+        }
+
+        @Override
+        public Subscription revokeCancellationAtPeriodEnd(String stripeSubscriptionId) throws StripeException {
+        RequestOptions requestOptions = RequestOptions.builder()
+            .setApiKey(secretKey)
+            .build();
+        SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
+            .setCancelAtPeriodEnd(false)
+            .build();
+        return Subscription.retrieve(stripeSubscriptionId, requestOptions).update(params, requestOptions);
+        }
 
     @Override
     public List<Invoice> listInvoicesSince(Instant lookbackPeriod) throws StripeException {

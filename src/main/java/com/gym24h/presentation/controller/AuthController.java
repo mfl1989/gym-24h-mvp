@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Profile({"local", "postgres-local", "test"})
 @RestController
-@RequestMapping("/auth/debug")
+@RequestMapping("/auth")
 public class AuthController {
 
     private final JwtTokenService jwtTokenService;
@@ -22,8 +22,13 @@ public class AuthController {
         this.jwtTokenService = jwtTokenService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/debug/login")
     public ApiResponse<AuthTokenResponse> debugLogin(@Valid @RequestBody DebugLoginRequest request) {
+        return ApiResponse.ok(jwtTokenService.issueAuthenticationToken(request.userId()));
+    }
+
+    @PostMapping("/dev-login")
+    public ApiResponse<AuthTokenResponse> devLogin(@Valid @RequestBody DebugLoginRequest request) {
         return ApiResponse.ok(jwtTokenService.issueAuthenticationToken(request.userId()));
     }
 }

@@ -38,6 +38,7 @@ public class SubscriptionReconciliationService {
     private final SubscriptionCommandService subscriptionCommandService;
     private final AuditLogJdbcRepository auditLogJdbcRepository;
     private final Clock clock;
+    private final boolean reconciliationEnabled;
     private final long lookbackHours;
 
     public SubscriptionReconciliationService(
@@ -46,6 +47,7 @@ public class SubscriptionReconciliationService {
             SubscriptionCommandService subscriptionCommandService,
             AuditLogJdbcRepository auditLogJdbcRepository,
             Clock clock,
+            @Value("${stripe.reconciliation.enabled:true}") boolean reconciliationEnabled,
             @Value("${stripe.reconciliation.lookback-hours:24}") long lookbackHours
     ) {
         this.stripeClient = stripeClient;
@@ -53,6 +55,7 @@ public class SubscriptionReconciliationService {
         this.subscriptionCommandService = subscriptionCommandService;
         this.auditLogJdbcRepository = auditLogJdbcRepository;
         this.clock = clock;
+        this.reconciliationEnabled = reconciliationEnabled;
         this.lookbackHours = lookbackHours;
     }
 
@@ -100,12 +103,17 @@ public class SubscriptionReconciliationService {
 
     @Scheduled(cron = "0 0 * * * *", zone = "UTC")
     public void scheduledReconciliation() {
+        if (!reconciliationEnabled) {
+            log.info("subscription reconciliation skipped because stripe.reconciliation.enabled=false");
+            return;
+        }
+
         Instant lookbackPeriod = Instant.now(clock).minus(Duration.ofHours(lookbackHours));
         log.info("subscription reconciliation started lookbackPeriod={} lookbackHours={}", lookbackPeriod, lookbackHours);
         try {
             int correctedCount = reconcileWithStripe(lookbackPeriod);
             log.info("subscription reconciliation correctedCount={}", correctedCount);
-        } catch (BusinessException exception) {
+        } catch (Exception exception) {
             log.error("subscription reconciliation failed", exception);
         }
         log.info("subscription reconciliation finished lookbackPeriod={}", lookbackPeriod);

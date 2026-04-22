@@ -20,3 +20,6 @@ gradle.zip
 # Env
 .env
 application-local.yml
+
+# Local tools
+ngrok.exe

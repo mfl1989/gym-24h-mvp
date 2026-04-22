@@ -38,6 +38,13 @@ spring:
 server:
   shutdown: graceful
 
+door-lock:
+  api-url: ${DOOR_LOCK_API_URL:http://localhost:8081/mock/door-lock/unlock}
+
+app:
+  admin:
+    secret: ${APP_ADMIN_SECRET:super-secret-admin-key}
+
 stripe:
   api:
     secret-key: ${STRIPE_API_SECRET_KEY:YOUR_STRIPE_API_SECRET_KEY}

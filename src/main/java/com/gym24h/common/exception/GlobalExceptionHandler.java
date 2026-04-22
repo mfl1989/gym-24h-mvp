@@ -37,6 +37,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(buildError(ErrorCodes.BUSINESS_RULE_VIOLATION, exception.getMessage()));
     }
 
+    @ExceptionHandler(InfrastructureException.class)
+    public ResponseEntity<ErrorResponse> handleInfrastructure(InfrastructureException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(buildError(exception.getCode(), exception.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

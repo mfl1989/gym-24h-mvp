@@ -137,10 +137,24 @@ public class Subscription {
     }
 
     public void requestCancellation(Instant requestedAt) {
-        requireStatus(SubscriptionStatus.ACTIVE, "Only ACTIVE subscriptions can move to CANCELED");
-        this.status = SubscriptionStatus.CANCELED;
+        requireStatus(SubscriptionStatus.ACTIVE, "Only ACTIVE subscriptions can schedule cancellation");
         this.cancellationRequestedAt = Objects.requireNonNull(requestedAt, "requestedAt must not be null");
-        this.canceledAt = requestedAt;
+        this.canceledAt = currentPeriodEndAt;
+        touch();
+    }
+
+    public void revokeCancellation() {
+        requireStatus(SubscriptionStatus.ACTIVE, "Only ACTIVE subscriptions can revoke cancellation");
+        this.cancellationRequestedAt = null;
+        this.canceledAt = null;
+        touch();
+    }
+
+    public void forceTerminate(Instant terminatedAt) {
+        Instant effectiveTerminatedAt = Objects.requireNonNull(terminatedAt, "terminatedAt must not be null");
+        this.status = SubscriptionStatus.EXPIRED;
+        this.canceledAt = effectiveTerminatedAt;
+        this.cancellationRequestedAt = null;
         touch();
     }
 

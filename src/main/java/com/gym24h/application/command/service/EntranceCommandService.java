@@ -1,11 +1,15 @@
 package com.gym24h.application.command.service;
 
 import com.gym24h.application.command.dto.OpenDoorCommand;
+import com.gym24h.application.outbound.DoorLockClient;
 import com.gym24h.common.constant.ErrorCodes;
 import com.gym24h.common.exception.BusinessException;
+import com.gym24h.common.exception.InfrastructureException;
 import com.gym24h.common.logging.RequestIdFilter;
 import com.gym24h.domain.service.GeneratedQrToken;
 import com.gym24h.domain.model.subscription.SubscriptionId;
+import com.gym24h.domain.model.subscription.SubscriptionStatus;
+import com.gym24h.domain.model.user.UserId;
 import com.gym24h.domain.repository.SubscriptionRepository;
 import com.gym24h.domain.service.EntranceValidator;
 import com.gym24h.domain.service.QrTokenGenerator;
@@ -40,6 +44,7 @@ public class EntranceCommandService {
     private final IdempotencyService idempotencyService;
     private final JwtTokenService jwtTokenService;
     private final AuditLogJdbcRepository auditLogJdbcRepository;
+    private final DoorLockClient doorLockClient;
 
     public EntranceCommandService(
             SubscriptionRepository subscriptionRepository,
@@ -47,7 +52,8 @@ public class EntranceCommandService {
             QrTokenGenerator qrTokenGenerator,
             IdempotencyService idempotencyService,
             JwtTokenService jwtTokenService,
-            AuditLogJdbcRepository auditLogJdbcRepository
+            AuditLogJdbcRepository auditLogJdbcRepository,
+            DoorLockClient doorLockClient
     ) {
         this.subscriptionRepository = subscriptionRepository;
         this.entranceValidator = entranceValidator;
@@ -55,6 +61,7 @@ public class EntranceCommandService {
         this.idempotencyService = idempotencyService;
         this.jwtTokenService = jwtTokenService;
         this.auditLogJdbcRepository = auditLogJdbcRepository;
+        this.doorLockClient = doorLockClient;
     }
 
     public GeneratedQrToken issueQrToken(UUID userId, UUID subscriptionId) {
@@ -75,6 +82,26 @@ public class EntranceCommandService {
 
         entranceValidator.validate(subscription, Instant.now());
         return qrTokenGenerator.generate(userId, subscriptionId);
+    }
+
+    public GeneratedQrToken issueCurrentUserQrToken(UUID userId) {
+        var subscription = subscriptionRepository.findLatestByUserId(new UserId(userId))
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCodes.RESOURCE_NOT_FOUND,
+                        "Subscription not found",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+            throw new BusinessException(
+                    ErrorCodes.FORBIDDEN,
+                    "Only ACTIVE subscriptions can issue entrance token",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+
+        entranceValidator.validate(subscription, Instant.now());
+        return qrTokenGenerator.generate(userId, subscription.getId().value());
     }
 
     public void openDoor(OpenDoorCommand command) {
@@ -108,7 +135,7 @@ public class EntranceCommandService {
 
             entranceValidator.validate(subscription, Instant.now());
 
-            // TODO: call DoorLockClient after the IoT integration contract is finalized.
+            doorLockClient.unlock("MAIN_DOOR_01");
 
             auditLogJdbcRepository.save(command.userId(), OPEN_DOOR_ACTION, "SUCCESS", "Door request accepted", requestId);
         } catch (ExpiredJwtException exception) {
@@ -116,6 +143,9 @@ public class EntranceCommandService {
         } catch (JwtException | IllegalArgumentException exception) {
             throw logAndWrap(command.userId(), requestId, ErrorCodes.UNAUTHORIZED, "Invalid QR token", HttpStatus.UNAUTHORIZED);
         } catch (BusinessException exception) {
+            auditLogJdbcRepository.save(command.userId(), OPEN_DOOR_ACTION, "FAILURE", exception.getMessage(), requestId);
+            throw exception;
+        } catch (InfrastructureException exception) {
             auditLogJdbcRepository.save(command.userId(), OPEN_DOOR_ACTION, "FAILURE", exception.getMessage(), requestId);
             throw exception;
         } catch (IllegalStateException exception) {

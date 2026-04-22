@@ -8,6 +8,7 @@ public record CurrentUserProfileView(
         String displayName,
         String membershipStatus,
         SubscriptionStatus subscriptionStatus,
-        Instant subscriptionValidUntil
+        Instant subscriptionValidUntil,
+        boolean cancelAtPeriodEnd
 ) {
 }

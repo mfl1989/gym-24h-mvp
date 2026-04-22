@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface JpaUserRepository extends JpaRepository<UserEntity, UUID> {
 
     Optional<UserEntity> findByIdAndDeletedFalse(UUID id);
+
+    java.util.List<UserEntity> findByDeletedFalseOrderByCreatedAtDesc();
 }

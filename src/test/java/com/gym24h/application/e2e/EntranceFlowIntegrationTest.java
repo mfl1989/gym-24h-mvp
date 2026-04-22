@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,6 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class EntranceFlowIntegrationTest {
+
+        @MockBean
+        private com.gym24h.application.outbound.DoorLockClient doorLockClient;
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,6 +41,7 @@ class EntranceFlowIntegrationTest {
 
     @BeforeEach
     void setUp() {
+                doNothing().when(doorLockClient).unlock("MAIN_DOOR_01");
         jdbcTemplate.update("delete from audit_logs");
         jdbcTemplate.update("delete from invoices");
         jdbcTemplate.update("delete from subscriptions");

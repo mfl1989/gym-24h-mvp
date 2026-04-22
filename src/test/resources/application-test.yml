@@ -51,4 +51,11 @@ stripe:
   webhook:
     secret: whsec_test_secret_for_integration
 
+door-lock:
+  api-url: http://localhost:8081/mock/door-lock/unlock
+
+app:
+  admin:
+    secret: super-secret-admin-key
+
 

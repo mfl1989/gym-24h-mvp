@@ -1,0 +1,6 @@
+package com.gym24h.presentation.request;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record CheckoutSessionRequest(@NotBlank String priceId) {
+}

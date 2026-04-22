@@ -15,7 +15,6 @@ spring:
       hibernate:
         jdbc:
           "[time_zone]": UTC
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         "[format_sql]": true
         "[use_sql_comments]": true
   flyway:
@@ -30,6 +29,8 @@ spring:
       host: localhost
       port: 6379
       timeout: 1000ms
+      repositories:
+        enabled: false
 
   jackson:
     time-zone: UTC
@@ -40,8 +41,23 @@ server:
 stripe:
   api:
     secret-key: ${STRIPE_API_SECRET_KEY:YOUR_STRIPE_API_SECRET_KEY}
+  checkout:
+    success-url: ${STRIPE_CHECKOUT_SUCCESS_URL:http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}}
+    cancel-url: ${STRIPE_CHECKOUT_CANCEL_URL:http://localhost:3000/cancel}
+  reconciliation:
+    lookback-hours: ${STRIPE_RECONCILIATION_LOOKBACK_HOURS:24}
   webhook:
     secret: ${STRIPE_WEBHOOK_SECRET:YOUR_STRIPE_WEBHOOK_SECRET}
+
+security:
+  jwt:
+    auth-secret: ${JWT_AUTH_SECRET:dev-auth-secret-32chars-minimum-length-value}
+    issuer: ${JWT_AUTH_ISSUER:gym24h-auth}
+    auth-ttl-seconds: ${JWT_AUTH_TTL_SECONDS:3600}
+  qr:
+    secret: ${QR_TOKEN_SECRET:dev-qr-secret-32chars-minimum-length-value!!}
+    issuer: ${QR_TOKEN_ISSUER:gym24h-qr}
+    ttl-seconds: ${QR_TOKEN_TTL_SECONDS:30}
 
 logging:
   level:

@@ -12,5 +12,11 @@ public interface SubscriptionRepository {
 
     Optional<Subscription> findActiveByUserId(UserId userId);
 
+    Optional<Subscription> findActiveOrArrearsByUserId(UserId userId);
+
+    Optional<Subscription> findLatestByUserId(UserId userId);
+
+    Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId);
+
     Subscription save(Subscription subscription);
 }

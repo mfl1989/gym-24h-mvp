@@ -1,6 +1,20 @@
 package com.gym24h.infrastructure.external.stripe;
 
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
+import com.stripe.model.Invoice;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
+
+import java.time.Instant;
+import java.util.List;
+
 public interface StripeClient {
 
-    void verifyWebhookSignature(String payload, String signatureHeader);
+    Event verifyWebhookSignature(String payload, String signatureHeader) throws SignatureVerificationException;
+
+    Session createCheckoutSession(SessionCreateParams params) throws StripeException;
+
+    List<Invoice> listInvoicesSince(Instant lookbackPeriod) throws StripeException;
 }

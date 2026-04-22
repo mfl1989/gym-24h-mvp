@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public class SubscriptionRepositoryImpl implements SubscriptionRepository {
@@ -31,6 +32,30 @@ public class SubscriptionRepositoryImpl implements SubscriptionRepository {
     @Transactional(readOnly = true)
     public Optional<Subscription> findActiveByUserId(UserId userId) {
         return jpaSubscriptionRepository.findFirstByUserIdAndStatusAndDeletedFalse(userId.value(), SubscriptionStatus.ACTIVE)
+                .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Subscription> findActiveOrArrearsByUserId(UserId userId) {
+        return jpaSubscriptionRepository.findFirstByUserIdAndStatusInAndDeletedFalse(
+                        userId.value(),
+                        List.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.ARREARS)
+                )
+                .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Subscription> findLatestByUserId(UserId userId) {
+        return jpaSubscriptionRepository.findFirstByUserIdAndDeletedFalseOrderByCurrentPeriodEndAtDesc(userId.value())
+                .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId) {
+        return jpaSubscriptionRepository.findFirstByStripeSubscriptionIdAndDeletedFalse(stripeSubscriptionId)
                 .map(this::toDomain);
     }
 
@@ -88,6 +113,7 @@ public class SubscriptionRepositoryImpl implements SubscriptionRepository {
         entity.setCancellationRequestedAt(subscription.getCancellationRequestedAt());
         entity.setCreatedAt(subscription.getCreatedAt());
         entity.setUpdatedAt(subscription.getUpdatedAt());
+        entity.setVersion(subscription.getVersion());
         entity.setDeleted(subscription.isDeleted());
         entity.setSubChar1(subscription.getSubChar1());
         entity.setSubChar2(subscription.getSubChar2());

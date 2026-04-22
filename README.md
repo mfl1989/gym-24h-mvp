@@ -8,6 +8,25 @@
 ./gradlew bootRun
 ```
 
+PostgreSQL を使う既定プロファイルで起動する場合は、事前に `DB_PASSWORD` を設定してください。
+
+```powershell
+$env:DB_PASSWORD='postgres'
+.\gradle-8.5\bin\gradle.bat bootRun
+```
+
+ローカルの PostgreSQL を固定資格情報で使う場合は、専用の `postgres-local` プロファイルでも起動できます。
+
+```powershell
+.\gradle-8.5\bin\gradle.bat bootRun --args="--spring.profiles.active=postgres-local"
+```
+
+PostgreSQL の認証情報が未設定のローカル環境では、H2 を使う local プロファイルで起動できます。
+
+```bash
+./gradle-8.5/bin/gradle bootRun --args='--spring.profiles.active=local'
+```
+
 ## テスト
 
 ```bash

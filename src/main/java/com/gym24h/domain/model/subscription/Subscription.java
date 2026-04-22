@@ -152,6 +152,13 @@ public class Subscription {
         }
     }
 
+    public void extendCurrentPeriodFrom(Instant paidAt) {
+        Instant effectivePaidAt = Objects.requireNonNull(paidAt, "paidAt must not be null");
+        Instant base = currentPeriodEndAt.isAfter(effectivePaidAt) ? currentPeriodEndAt : effectivePaidAt;
+        this.currentPeriodEndAt = base.plus(billingCycle.duration());
+        touch();
+    }
+
     public boolean canEnter(Instant now, long bufferSeconds) {
         expireIfNeeded(now, bufferSeconds);
         return status == SubscriptionStatus.ACTIVE && !deleted && now.isBefore(currentPeriodEndAt.plusSeconds(bufferSeconds));

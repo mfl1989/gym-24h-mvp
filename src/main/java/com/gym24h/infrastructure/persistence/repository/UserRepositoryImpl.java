@@ -65,6 +65,7 @@ public class UserRepositoryImpl implements UserRepository {
         entity.setMembershipStatus(user.getMembershipStatus());
         entity.setCreatedAt(user.getCreatedAt());
         entity.setUpdatedAt(user.getUpdatedAt());
+        entity.setVersion(user.getVersion());
         entity.setDeleted(user.isDeleted());
         entity.setSubChar1(user.getSubChar1());
         entity.setSubChar2(user.getSubChar2());

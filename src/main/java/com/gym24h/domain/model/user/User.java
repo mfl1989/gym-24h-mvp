@@ -101,15 +101,21 @@ public class User {
     }
 
     public static User create(String lineUserId) {
+        return create(lineUserId, null, null);
+    }
+
+    public static User create(String lineUserId, String displayName, String pictureUrl) {
         Instant now = Instant.now();
         return User.builder()
                 .id(UserId.newId())
                 .lineUserId(lineUserId)
+                .displayName(displayName)
                 .membershipStatus("ACTIVE")
                 .createdAt(now)
                 .updatedAt(now)
                 .version(0)
                 .deleted(false)
+                .subChar1(pictureUrl)
                 .build();
     }
 

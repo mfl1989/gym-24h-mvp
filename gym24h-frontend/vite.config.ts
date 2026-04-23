@@ -1,16 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts: ['tiger-stature-produce.ngrok-free.dev'],
     proxy: {
-      // 遇到这些开头的请求，前端自动帮你转发给本地后端的 8080
       '/auth': 'http://localhost:8080',
       '/me': 'http://localhost:8080',
+      '/admin/users': 'http://localhost:8080',
+      '/admin/entrances': 'http://localhost:8080',
+      '/admin/subscriptions': 'http://localhost:8080',
       '/entrances': 'http://localhost:8080',
-      '/api': 'http://localhost:8080' 
-    }
-  }
+      '/api': 'http://localhost:8080',
+    },
+  },
 })

@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/gym24h_db
     username: postgres
-    password: ${DB_PASSWORD:YOUR_POSTGRES_PASSWORD}
+    password: postgres
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-init-sql: SET TIME ZONE 'UTC'
@@ -20,10 +20,12 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    # clean-on-validation-error: true  # <--- 就是这句“炸毁重建”的魔法！
+    # clean-disabled: false
     locations: classpath:db/migration
     url: jdbc:postgresql://localhost:5432/gym24h_db
     user: postgres
-    password: ${DB_PASSWORD:YOUR_POSTGRES_PASSWORD}
+    password: postgres
   data:
     redis:
       host: localhost
@@ -44,6 +46,9 @@ door-lock:
 app:
   admin:
     secret: ${APP_ADMIN_SECRET:super-secret-admin-key}
+
+line:
+  channel-id: ${LINE_CHANNEL_ID:YOUR_LINE_CHANNEL_ID}
 
 stripe:
   api:

@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/gym24h_db
     username: postgres
-    password: ${DB_PASSWORD:postgres}
+    password: postgres
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-init-sql: SET TIME ZONE 'UTC'
@@ -26,8 +26,11 @@ spring:
     locations: classpath:db/migration
     url: jdbc:postgresql://localhost:5432/gym24h_db
     user: postgres
-    password: ${DB_PASSWORD:postgres}
+    password: postgres
 
 stripe:
   reconciliation:
     enabled: false
+
+door-lock:
+  mock: true

@@ -1,7 +1,10 @@
 package com.gym24h.presentation.controller;
 
+import com.gym24h.application.command.service.DebugLoginService;
+import com.gym24h.application.command.service.LineLoginService;
 import com.gym24h.infrastructure.security.JwtTokenService;
 import com.gym24h.presentation.request.DebugLoginRequest;
+import com.gym24h.presentation.request.LineLoginRequest;
 import com.gym24h.presentation.response.ApiResponse;
 import com.gym24h.presentation.response.AuthTokenResponse;
 import jakarta.validation.Valid;
@@ -17,18 +20,31 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final JwtTokenService jwtTokenService;
+    private final DebugLoginService debugLoginService;
+    private final LineLoginService lineLoginService;
 
-    public AuthController(JwtTokenService jwtTokenService) {
+    public AuthController(
+            JwtTokenService jwtTokenService,
+            DebugLoginService debugLoginService,
+            LineLoginService lineLoginService
+    ) {
         this.jwtTokenService = jwtTokenService;
+        this.debugLoginService = debugLoginService;
+        this.lineLoginService = lineLoginService;
     }
 
     @PostMapping("/debug/login")
     public ApiResponse<AuthTokenResponse> debugLogin(@Valid @RequestBody DebugLoginRequest request) {
-        return ApiResponse.ok(jwtTokenService.issueAuthenticationToken(request.userId()));
+        return ApiResponse.ok(debugLoginService.loginOrProvision(request.userId()));
     }
 
     @PostMapping("/dev-login")
     public ApiResponse<AuthTokenResponse> devLogin(@Valid @RequestBody DebugLoginRequest request) {
-        return ApiResponse.ok(jwtTokenService.issueAuthenticationToken(request.userId()));
+        return ApiResponse.ok(debugLoginService.loginOrProvision(request.userId()));
+    }
+
+    @PostMapping("/line-login")
+    public ApiResponse<AuthTokenResponse> lineLogin(@Valid @RequestBody LineLoginRequest request) {
+        return ApiResponse.ok(lineLoginService.login(request.idToken()));
     }
 }

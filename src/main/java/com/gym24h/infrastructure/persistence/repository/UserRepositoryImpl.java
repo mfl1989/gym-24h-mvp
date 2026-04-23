@@ -28,6 +28,13 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<User> findByLineUserId(String lineUserId) {
+        return jpaUserRepository.findByLineUserIdAndDeletedFalse(lineUserId)
+                .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<User> findAll() {
         return jpaUserRepository.findByDeletedFalseOrderByCreatedAtDesc().stream()
                 .map(this::toDomain)

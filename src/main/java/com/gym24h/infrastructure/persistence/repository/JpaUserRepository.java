@@ -10,5 +10,7 @@ public interface JpaUserRepository extends JpaRepository<UserEntity, UUID> {
 
     Optional<UserEntity> findByIdAndDeletedFalse(UUID id);
 
+    Optional<UserEntity> findByLineUserIdAndDeletedFalse(String lineUserId);
+
     java.util.List<UserEntity> findByDeletedFalseOrderByCreatedAtDesc();
 }

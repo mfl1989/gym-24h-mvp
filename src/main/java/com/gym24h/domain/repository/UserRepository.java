@@ -10,6 +10,8 @@ public interface UserRepository {
 
     Optional<User> findById(UserId userId);
 
+    Optional<User> findByLineUserId(String lineUserId);
+
     List<User> findAll();
 
     User save(User user);

@@ -30,6 +30,15 @@ public class AppConfig {
     }
 
     @Bean
+    @Qualifier("lineApiRestTemplate")
+    public RestTemplate lineApiRestTemplate(RestTemplateBuilder restTemplateBuilder) {
+        return restTemplateBuilder
+                .setConnectTimeout(Duration.ofSeconds(2))
+                .setReadTimeout(Duration.ofSeconds(3))
+                .build();
+    }
+
+    @Bean
     public Clock clock() {
         return Clock.systemUTC();
     }

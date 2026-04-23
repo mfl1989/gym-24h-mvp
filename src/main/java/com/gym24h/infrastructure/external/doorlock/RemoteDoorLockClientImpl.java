@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.util.Map;
  * 同期呼び出しは短い timeout と少数回の retry に限定する。長くぶら下げず、到達不能なら即座に失敗として返す。
  */
 @Component
+@ConditionalOnProperty(name = "door-lock.mock", havingValue = "false", matchIfMissing = true)
 public class RemoteDoorLockClientImpl implements DoorLockClient {
 
     private static final Logger log = LoggerFactory.getLogger(RemoteDoorLockClientImpl.class);

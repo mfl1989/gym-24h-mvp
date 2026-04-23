@@ -54,6 +54,7 @@ public class MeController {
         CurrentUserProfileView profile = userProfileQueryService.getCurrentUserProfile(currentUserId());
         return ApiResponse.ok(new MeProfileResponse(
                 profile.displayName(),
+                profile.pictureUrl(),
                 profile.membershipStatus(),
                 profile.subscriptionStatus(),
             profile.subscriptionValidUntil(),

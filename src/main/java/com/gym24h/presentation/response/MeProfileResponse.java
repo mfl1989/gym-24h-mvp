@@ -6,6 +6,7 @@ import java.time.Instant;
 
 public record MeProfileResponse(
         String displayName,
+        String pictureUrl,
         String membershipStatus,
         SubscriptionStatus subscriptionStatus,
         Instant subscriptionValidUntil,

@@ -54,6 +54,7 @@ public class UserProfileQueryService {
         var subscription = subscriptionRepository.findLatestByUserId(userId);
         return new CurrentUserProfileView(
                 user.getDisplayName(),
+                user.getSubChar1(),
                 user.getMembershipStatus(),
                 subscription.map(com.gym24h.domain.model.subscription.Subscription::getStatus).orElse(null),
                 subscription.map(com.gym24h.domain.model.subscription.Subscription::getValidUntil).orElse(null),

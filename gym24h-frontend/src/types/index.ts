@@ -2,6 +2,7 @@ export type SubscriptionStatus = 'ACTIVE' | 'ARREARS' | 'CANCELED' | 'EXPIRED' |
 
 export type MeProfileResponse = {
   displayName: string | null
+  pictureUrl?: string | null
   membershipStatus: string
   subscriptionStatus: SubscriptionStatus
   subscriptionValidUntil: string | null

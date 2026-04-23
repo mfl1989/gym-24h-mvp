@@ -1,12 +1,14 @@
 package com.gym24h.presentation.controller;
 
 import com.gym24h.application.command.service.SubscriptionCommandService;
+import com.gym24h.application.command.service.EntranceCommandService;
 import com.gym24h.application.outbound.DoorLockClient;
 import com.gym24h.application.query.dto.AdminUserProfileView;
 import com.gym24h.application.query.service.AdminQueryService;
 import com.gym24h.common.logging.RequestIdFilter;
 import com.gym24h.infrastructure.persistence.repository.AuditLogJdbcRepository;
 import com.gym24h.presentation.request.AdminRemoteOpenRequest;
+import com.gym24h.presentation.request.AdminScanEntranceRequest;
 import com.gym24h.presentation.request.ForceTerminateSubscriptionRequest;
 import com.gym24h.presentation.response.AdminUserProfileResponse;
 import com.gym24h.presentation.response.ApiResponse;
@@ -35,17 +37,20 @@ public class AdminController {
     private final AdminQueryService adminQueryService;
     private final DoorLockClient doorLockClient;
     private final SubscriptionCommandService subscriptionCommandService;
+    private final EntranceCommandService entranceCommandService;
     private final AuditLogJdbcRepository auditLogJdbcRepository;
 
     public AdminController(
             AdminQueryService adminQueryService,
             DoorLockClient doorLockClient,
             SubscriptionCommandService subscriptionCommandService,
+            EntranceCommandService entranceCommandService,
             AuditLogJdbcRepository auditLogJdbcRepository
     ) {
         this.adminQueryService = adminQueryService;
         this.doorLockClient = doorLockClient;
         this.subscriptionCommandService = subscriptionCommandService;
+        this.entranceCommandService = entranceCommandService;
         this.auditLogJdbcRepository = auditLogJdbcRepository;
     }
 
@@ -68,6 +73,12 @@ public class AdminController {
             auditLogJdbcRepository.save(null, "ADMIN_REMOTE_OPEN", "FAILURE", exception.getMessage(), requestId);
             throw exception;
         }
+    }
+
+    @PostMapping("/entrances/scan")
+    public ApiResponse<String> scanEntrance(@Valid @RequestBody AdminScanEntranceRequest request) {
+        entranceCommandService.openDoorByAdminScan(request.qrToken());
+        return ApiResponse.ok("SCAN_OPEN_ACCEPTED");
     }
 
     @PostMapping("/subscriptions/{userId}/terminate")

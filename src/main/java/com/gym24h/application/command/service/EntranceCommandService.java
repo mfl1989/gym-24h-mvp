@@ -110,32 +110,7 @@ public class EntranceCommandService {
             QrTokenClaims qrTokenClaims = jwtTokenService.parseQrToken(command.qrToken());
             validateAuthenticatedUser(command.userId(), qrTokenClaims.userId());
 
-            // 使い捨て QR を再利用可能にすると、スクリーンショット共有だけで第三者が開錠できる。
-            // そのため、QR 自体を短寿命かつ一回限りとして消費する。
-            ensureQrTokenNotReplayed(qrTokenClaims);
-
-            // モバイル回線の再送や多重タップは通常運用で発生するため、同一 request_id の 5 秒再送は
-            // 異常操作ではなく「同一要求」とみなし二重開錠を防ぐ。
-            ensureDoorRequestIsIdempotent(requestId);
-
-            var subscription = subscriptionRepository.findById(new SubscriptionId(qrTokenClaims.subscriptionId()))
-                    .orElseThrow(() -> new BusinessException(
-                            ErrorCodes.RESOURCE_NOT_FOUND,
-                            "Subscription not found",
-                            HttpStatus.NOT_FOUND
-                    ));
-
-            if (!subscription.getUserId().value().equals(command.userId())) {
-                throw new BusinessException(
-                        ErrorCodes.FORBIDDEN,
-                        "Subscription does not belong to the authenticated user",
-                        HttpStatus.FORBIDDEN
-                );
-            }
-
-            entranceValidator.validate(subscription, Instant.now());
-
-            doorLockClient.unlock("MAIN_DOOR_01");
+            performDoorOpen(command.userId(), qrTokenClaims, requestId);
 
             auditLogJdbcRepository.save(command.userId(), OPEN_DOOR_ACTION, "SUCCESS", "Door request accepted", requestId);
         } catch (ExpiredJwtException exception) {
@@ -152,6 +127,60 @@ public class EntranceCommandService {
             auditLogJdbcRepository.save(command.userId(), OPEN_DOOR_ACTION, "FAILURE", exception.getMessage(), requestId);
             throw exception;
         }
+    }
+
+    public void openDoorByAdminScan(String qrToken) {
+        String requestId = resolveRequestId();
+        try {
+            QrTokenClaims qrTokenClaims = jwtTokenService.parseQrToken(qrToken);
+
+            performDoorOpen(qrTokenClaims.userId(), qrTokenClaims, requestId);
+
+            auditLogJdbcRepository.save(qrTokenClaims.userId(), "ADMIN_SCAN_OPEN_DOOR", "SUCCESS", "Admin scanner door request accepted", requestId);
+        } catch (ExpiredJwtException exception) {
+            throw logAndWrap(null, requestId, ErrorCodes.UNAUTHORIZED, "QR token has expired", HttpStatus.UNAUTHORIZED);
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw logAndWrap(null, requestId, ErrorCodes.UNAUTHORIZED, "Invalid QR token", HttpStatus.UNAUTHORIZED);
+        } catch (BusinessException exception) {
+            auditLogJdbcRepository.save(null, "ADMIN_SCAN_OPEN_DOOR", "FAILURE", exception.getMessage(), requestId);
+            throw exception;
+        } catch (InfrastructureException exception) {
+            auditLogJdbcRepository.save(null, "ADMIN_SCAN_OPEN_DOOR", "FAILURE", exception.getMessage(), requestId);
+            throw exception;
+        } catch (IllegalStateException exception) {
+            auditLogJdbcRepository.save(null, "ADMIN_SCAN_OPEN_DOOR", "FAILURE", exception.getMessage(), requestId);
+            throw exception;
+        }
+    }
+
+    private void performDoorOpen(UUID userId, QrTokenClaims qrTokenClaims, String requestId) {
+
+            // 使い捨て QR を再利用可能にすると、スクリーンショット共有だけで第三者が開錠できる。
+            // そのため、QR 自体を短寿命かつ一回限りとして消費する。
+            ensureQrTokenNotReplayed(qrTokenClaims);
+
+            // モバイル回線の再送や多重タップは通常運用で発生するため、同一 request_id の 5 秒再送は
+            // 異常操作ではなく「同一要求」とみなし二重開錠を防ぐ。
+            ensureDoorRequestIsIdempotent(requestId);
+
+            var subscription = subscriptionRepository.findById(new SubscriptionId(qrTokenClaims.subscriptionId()))
+                    .orElseThrow(() -> new BusinessException(
+                            ErrorCodes.RESOURCE_NOT_FOUND,
+                            "Subscription not found",
+                            HttpStatus.NOT_FOUND
+                    ));
+
+            if (!subscription.getUserId().value().equals(userId)) {
+                throw new BusinessException(
+                        ErrorCodes.FORBIDDEN,
+                        "Subscription does not belong to the QR token user",
+                        HttpStatus.FORBIDDEN
+                );
+            }
+
+            entranceValidator.validate(subscription, Instant.now());
+
+            doorLockClient.unlock("MAIN_DOOR_01");
     }
 
     private void validateAuthenticatedUser(UUID authenticatedUserId, UUID qrUserId) {

@@ -8,6 +8,7 @@ import InvoiceModal from './InvoiceModal'
 
 type MeApiPayload = {
   displayName: string | null
+  pictureUrl?: string | null
   membershipStatus: string
   subscriptionStatus: SubscriptionStatus
   subscriptionValidUntil?: string | null
@@ -46,6 +47,7 @@ function normalizeProfile(payload: MeApiPayload): MeProfileResponse {
 
   return {
     displayName: payload.displayName,
+    pictureUrl: payload.pictureUrl ?? null,
     membershipStatus: payload.membershipStatus,
     subscriptionStatus: payload.subscriptionStatus,
     subscriptionValidUntil: payload.subscriptionValidUntil ?? currentPeriodEndAt,
@@ -228,6 +230,8 @@ export default function Dashboard() {
 
   const statusKey = profile.subscriptionStatus ?? 'UNKNOWN'
   const statusClassName = statusStyles[statusKey] ?? statusStyles.UNKNOWN
+  const memberName = profile.displayName?.trim() || '会员'
+  const pictureUrl = profile.pictureUrl?.trim() || null
 
   return (
     <>
@@ -237,11 +241,26 @@ export default function Dashboard() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(34,211,238,0.26),_transparent_38%),radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_30%)]" />
             <div className="relative space-y-4">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">Gym24h Dashboard</p>
-                  <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">
-                    {profile.displayName || '会员'}
-                  </h1>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-[linear-gradient(145deg,_rgba(15,23,42,0.92),_rgba(8,47,73,0.92))] shadow-[0_18px_40px_rgba(6,182,212,0.18)] ring-1 ring-cyan-400/20 backdrop-blur-sm">
+                    {pictureUrl ? (
+                      <img
+                        src={pictureUrl}
+                        alt={`${memberName} avatar`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.28),_transparent_55%)] text-lg font-semibold tracking-[0.16em] text-cyan-100">
+                        G24
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">Gym24h Dashboard</p>
+                    <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+                      {memberName}
+                    </h1>
+                  </div>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassName}`}>
                   {statusKey}

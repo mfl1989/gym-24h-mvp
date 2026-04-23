@@ -27,6 +27,44 @@ PostgreSQL の認証情報が未設定のローカル環境では、H2 を使う
 ./gradle-8.5/bin/gradle bootRun --args='--spring.profiles.active=local'
 ```
 
+VS Code から前後端を一括で起動する場合は、`One Click Local Dev` タスクを実行してください。
+
+PowerShell から一発で起動する場合は、以下を実行します。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local-dev.ps1 -OpenBrowser
+```
+
+Ngrok と Cloudflare を含めた真機联调用に 4 つの窗口をまとめて起動する場合は、项目根目录の `start-dev-env.bat` を実行します。
+
+```bat
+start-dev-env.bat
+```
+
+## LIFF 真機联调配置
+
+前端 `gym24h-frontend/.env` には最低限以下を設定します。
+
+```env
+VITE_LIFF_ID=2009874045-xxxxxxxx
+VITE_API_BASE_URL=https://your-backend.ngrok-free.app
+```
+
+- `VITE_LIFF_ID`: LINE Developers の LIFF ID。本物の LIFF ID を入れること。URL ではない。
+- `VITE_API_BASE_URL`: 手机から到達できる后端公网地址。通常は ngrok の 8080 隧道 URL を使う。
+
+后端侧は `LINE_CHANNEL_ID` を設定して、`/auth/line-login` の idToken 校验先 audience と一致させます。
+
+```powershell
+$env:LINE_CHANNEL_ID='2009874045'
+```
+
+真機联调前のチェックポイント:
+
+- LIFF 控制台の endpoint URL が当前前端公网地址に一致していること
+- 后端 ngrok 地址が `VITE_API_BASE_URL` と一致していること
+- `LINE_CHANNEL_ID` が LIFF 所属チャネルの Channel ID と一致していること
+
 ## テスト
 
 ```bash

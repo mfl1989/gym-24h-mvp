@@ -2,6 +2,7 @@ spring:
   config:
     activate:
       on-profile: postgres-local
+    import: optional:file:./config/local-secrets.yml
   datasource:
     url: jdbc:postgresql://localhost:5432/gym24h_db
     username: postgres

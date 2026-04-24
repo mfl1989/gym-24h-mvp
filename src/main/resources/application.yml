@@ -52,6 +52,7 @@ line:
 
 stripe:
   api:
+    key: ${STRIPE_API_KEY:${STRIPE_API_SECRET_KEY:YOUR_STRIPE_API_SECRET_KEY}}
     secret-key: ${STRIPE_API_SECRET_KEY:YOUR_STRIPE_API_SECRET_KEY}
   checkout:
     success-url: ${STRIPE_CHECKOUT_SUCCESS_URL:http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}}

@@ -20,6 +20,8 @@ gradle.zip
 # Env
 .env
 application-local.yml
+config/local-secrets.yml
 
 # Local tools
 ngrok.exe
+cloudflared.exe

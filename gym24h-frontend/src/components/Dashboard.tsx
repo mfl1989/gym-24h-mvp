@@ -34,6 +34,10 @@ type ApiResponse<T> = {
   data: T
 }
 
+type CheckoutSessionPayload = {
+  checkoutUrl: string
+}
+
 const statusStyles: Record<string, string> = {
   ACTIVE: 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30',
   ARREARS: 'bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30',
@@ -194,6 +198,21 @@ export default function Dashboard() {
     }
   }
 
+  async function createCheckoutSession() {
+    try {
+      setErrorMessage(null)
+      const response = await api.post<ApiResponse<CheckoutSessionPayload>>('/api/payment/create-checkout-session')
+      window.location.href = response.data.data.checkoutUrl
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        handleUnauthorizedRedirect()
+        return
+      }
+
+      setErrorMessage('创建支付会话失败，请稍后重试')
+    }
+  }
+
   useEffect(() => {
     void fetchProfile()
   }, [])
@@ -299,8 +318,15 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[1.5rem] bg-slate-900 px-5 py-4 text-sm text-slate-100 shadow-[0_16px_48px_rgba(15,23,42,0.18)]">
-                当前订阅状态暂不支持展示入馆二维码，请先恢复有效会员资格。
+              <div className="rounded-[1.5rem] bg-slate-900 px-5 py-5 text-sm text-slate-100 shadow-[0_16px_48px_rgba(15,23,42,0.18)]">
+                <p>当前订阅状态暂不支持展示入馆二维码，请先恢复有效会员资格。</p>
+                <button
+                  type="button"
+                  onClick={() => void createCheckoutSession()}
+                  className="mt-4 rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                >
+                  立即开通会员
+                </button>
               </div>
             )}
 

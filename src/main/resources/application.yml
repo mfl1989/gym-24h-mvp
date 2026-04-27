@@ -55,8 +55,9 @@ stripe:
     key: ${STRIPE_API_KEY:${STRIPE_API_SECRET_KEY:YOUR_STRIPE_API_SECRET_KEY}}
     secret-key: ${STRIPE_API_SECRET_KEY:YOUR_STRIPE_API_SECRET_KEY}
   checkout:
-    success-url: ${STRIPE_CHECKOUT_SUCCESS_URL:http://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}}
-    cancel-url: ${STRIPE_CHECKOUT_CANCEL_URL:http://localhost:3000/cancel}
+    success-url: ${STRIPE_CHECKOUT_SUCCESS_URL:http://localhost:5173/dashboard?payment=success}
+    cancel-url: ${STRIPE_CHECKOUT_CANCEL_URL:http://localhost:5173/dashboard?payment=cancel}
+    price-id: ${STRIPE_CHECKOUT_PRICE_ID:YOUR_STRIPE_PRICE_ID}
   reconciliation:
     lookback-hours: ${STRIPE_RECONCILIATION_LOOKBACK_HOURS:24}
   webhook:

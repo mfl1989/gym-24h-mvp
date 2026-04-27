@@ -38,6 +38,8 @@ type CheckoutSessionPayload = {
   checkoutUrl: string
 }
 
+type PaymentStatus = 'success' | 'cancel' | null
+
 const statusStyles: Record<string, string> = {
   ACTIVE: 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30',
   ARREARS: 'bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30',
@@ -106,6 +108,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null)
 
   function handleUnauthorizedRedirect() {
     localStorage.removeItem('authToken')
@@ -214,6 +217,15 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
+    const currentUrl = new URL(window.location.href)
+    const paymentQuery = currentUrl.searchParams.get('payment')
+
+    if (paymentQuery === 'success' || paymentQuery === 'cancel') {
+      setPaymentStatus(paymentQuery)
+      currentUrl.searchParams.delete('payment')
+      window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`)
+    }
+
     void fetchProfile()
   }, [])
 
@@ -346,6 +358,18 @@ export default function Dashboard() {
             {profile.isCancelAtPeriodEnd ? (
               <div className="rounded-[1.5rem] border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm font-medium leading-6 text-amber-700">
                 已申请期末退会，本期结束后将不再扣费
+              </div>
+            ) : null}
+
+            {paymentStatus === 'success' ? (
+              <div className="rounded-[1.5rem] border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-sm font-medium leading-6 text-emerald-700">
+                支付已完成，会员状态会在 Stripe 回调处理后自动更新。如未立即生效，请稍后刷新。
+              </div>
+            ) : null}
+
+            {paymentStatus === 'cancel' ? (
+              <div className="rounded-[1.5rem] border border-slate-300/60 bg-slate-100 px-4 py-3 text-sm font-medium leading-6 text-slate-700">
+                你已取消本次支付，当前会员状态未发生变更。
               </div>
             ) : null}
 

@@ -1,7 +1,9 @@
 package com.gym24h.presentation.controller;
 
-import com.gym24h.infrastructure.external.stripe.StripeWebhookHandler;
-import com.gym24h.presentation.response.ApiResponse;
+import com.gym24h.application.command.service.SubscriptionCommandService;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,19 +14,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/webhooks")
 public class WebhookController {
 
-    private final StripeWebhookHandler stripeWebhookHandler;
+    private final SubscriptionCommandService subscriptionCommandService;
 
-    public WebhookController(StripeWebhookHandler stripeWebhookHandler) {
-        this.stripeWebhookHandler = stripeWebhookHandler;
+    public WebhookController(SubscriptionCommandService subscriptionCommandService) {
+        this.subscriptionCommandService = subscriptionCommandService;
     }
 
     @PostMapping("/stripe")
-    public ApiResponse<String> receiveStripeWebhook(
-            @RequestHeader("Stripe-Event-Id") String eventId,
-            @RequestHeader("Stripe-Event-Type") String eventType,
-            @RequestBody String payload
+    public ResponseEntity<Void> receiveStripeWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String signatureHeader
     ) {
-        stripeWebhookHandler.handle(eventId, eventType, payload);
-        return ApiResponse.ok("WEBHOOK_ACCEPTED");
+        try {
+            Event event = subscriptionCommandService.verifyWebhookSignature(payload, signatureHeader);
+            subscriptionCommandService.handleVerifiedWebhookEventAsync(event);
+            return ResponseEntity.ok().build();
+        } catch (SignatureVerificationException exception) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

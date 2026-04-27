@@ -51,7 +51,7 @@ class StripeWebhookIntegrationTest {
         String eventId = "evt_happy_001";
         String payload = checkoutCompletedPayload(eventId, fixture.userId(), fixture.subscriptionId());
 
-        mockMvc.perform(post("/subscriptions/webhooks")
+        mockMvc.perform(post("/webhooks/stripe")
                         .header("Stripe-Signature", createSignatureHeader(payload))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -73,7 +73,7 @@ class StripeWebhookIntegrationTest {
         String payload = checkoutCompletedPayload(eventId, fixture.userId(), fixture.subscriptionId());
         String signatureHeader = createSignatureHeader(payload);
 
-        mockMvc.perform(post("/subscriptions/webhooks")
+        mockMvc.perform(post("/webhooks/stripe")
                         .header("Stripe-Signature", signatureHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -82,7 +82,7 @@ class StripeWebhookIntegrationTest {
         awaitUntil(() -> "ACTIVE".equals(currentSubscriptionStatus(fixture.subscriptionId())));
         awaitUntil(() -> processedEventCount(eventId) == 1);
 
-        mockMvc.perform(post("/subscriptions/webhooks")
+        mockMvc.perform(post("/webhooks/stripe")
                         .header("Stripe-Signature", signatureHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -102,7 +102,7 @@ class StripeWebhookIntegrationTest {
         String eventId = "evt_bad_sig_001";
         String payload = checkoutCompletedPayload(eventId, fixture.userId(), fixture.subscriptionId());
 
-        mockMvc.perform(post("/subscriptions/webhooks")
+        mockMvc.perform(post("/webhooks/stripe")
                         .header("Stripe-Signature", "t=1710000000,v1=forged")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -118,7 +118,7 @@ class StripeWebhookIntegrationTest {
         String eventId = "evt_invoice_failed_001";
         String payload = invoicePaymentFailedPayload(eventId, fixture.userId(), fixture.subscriptionId(), "card_declined");
 
-        mockMvc.perform(post("/subscriptions/webhooks")
+        mockMvc.perform(post("/webhooks/stripe")
                         .header("Stripe-Signature", createSignatureHeader(payload))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -141,7 +141,7 @@ class StripeWebhookIntegrationTest {
         String eventId = "evt_invoice_succeeded_001";
         String payload = invoicePaymentSucceededPayload(eventId, fixture.userId(), fixture.subscriptionId());
 
-        mockMvc.perform(post("/subscriptions/webhooks")
+        mockMvc.perform(post("/webhooks/stripe")
                         .header("Stripe-Signature", createSignatureHeader(payload))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))

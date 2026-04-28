@@ -38,6 +38,11 @@ type CheckoutSessionPayload = {
   checkoutUrl: string
 }
 
+type AuthTokenPayload = {
+  authToken: string
+  expiresAt: string
+}
+
 type PaymentStatus = 'success' | 'cancel' | null
 
 const statusStyles: Record<string, string> = {
@@ -98,6 +103,10 @@ function formatDateTime(value: string | null) {
     minute: '2-digit',
     hour12: false,
   }).format(date)
+}
+
+function isLocalDevelopment() {
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 }
 
 export default function Dashboard() {
@@ -216,6 +225,27 @@ export default function Dashboard() {
     }
   }
 
+  async function switchToLocalPaymentTestAccount() {
+    try {
+      setErrorMessage(null)
+      const response = await api.post<ApiResponse<AuthTokenPayload>>('/auth/dev-login-no-subscription', {
+        userId: crypto.randomUUID(),
+      })
+
+      localStorage.setItem('authToken', response.data.data.authToken)
+      setQrToken('')
+      setPaymentStatus(null)
+      await fetchProfile()
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        handleUnauthorizedRedirect()
+        return
+      }
+
+      setErrorMessage('切换支付测试账号失败，请稍后重试')
+    }
+  }
+
   useEffect(() => {
     const currentUrl = new URL(window.location.href)
     const paymentQuery = currentUrl.searchParams.get('payment')
@@ -263,6 +293,7 @@ export default function Dashboard() {
   const statusClassName = statusStyles[statusKey] ?? statusStyles.UNKNOWN
   const memberName = profile.displayName?.trim() || '会员'
   const pictureUrl = profile.pictureUrl?.trim() || null
+  const isLocalMode = isLocalDevelopment()
 
   return (
     <>
@@ -332,13 +363,6 @@ export default function Dashboard() {
             ) : (
               <div className="rounded-[1.5rem] bg-slate-900 px-5 py-5 text-sm text-slate-100 shadow-[0_16px_48px_rgba(15,23,42,0.18)]">
                 <p>当前订阅状态暂不支持展示入馆二维码，请先恢复有效会员资格。</p>
-                <button
-                  type="button"
-                  onClick={() => void createCheckoutSession()}
-                  className="mt-4 rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                >
-                  立即开通会员
-                </button>
               </div>
             )}
 
@@ -353,6 +377,46 @@ export default function Dashboard() {
                   {formatDateTime(profile.currentPeriodEndAt)}
                 </span>
               </div>
+            </div>
+
+            <div className="rounded-[1.75rem] bg-white p-5 shadow-[0_16px_48px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/80">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                <span className="text-sm font-medium text-slate-500">Stripe 支付</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600">
+                  Checkout
+                </span>
+              </div>
+
+              {profile.subscriptionStatus === 'ACTIVE' ? (
+                <div className="pt-4 text-sm leading-6 text-slate-600">
+                  <p>当前账号已经有有效订阅，后端不会重复创建 Checkout Session。</p>
+                  {isLocalMode ? (
+                    <>
+                      <p className="mt-2 text-xs leading-5 text-slate-500">
+                        本地 dev-login 默认会自动创建 ACTIVE 订阅。你可以切换到一个新的无订阅测试账号来验证支付链路。
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void switchToLocalPaymentTestAccount()}
+                        className="mt-4 rounded-full border border-cyan-300 px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50"
+                      >
+                        切换到支付测试账号
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="pt-4">
+                  <p className="text-sm leading-6 text-slate-600">当前账号没有有效订阅，可以从这里发起 Stripe Checkout。</p>
+                  <button
+                    type="button"
+                    onClick={() => void createCheckoutSession()}
+                    className="mt-4 rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  >
+                    立即开通会员
+                  </button>
+                </div>
+              )}
             </div>
 
             {profile.isCancelAtPeriodEnd ? (

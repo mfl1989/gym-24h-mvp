@@ -35,6 +35,30 @@ PowerShell から一発で起動する場合は、以下を実行します。
 powershell -ExecutionPolicy Bypass -File .\scripts\start-local-dev.ps1 -OpenBrowser
 ```
 
+Stripe の本地 webhook 联调は、先に local secrets に API Key / Price ID / Webhook Secret を入れたうえで、専用スクリプトから起動します。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-stripe-listener.ps1
+```
+
+Webhook secret だけ先に確認したい場合は以下です。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-stripe-listener.ps1 -PrintSecretOnly
+```
+
+`config/local-secrets.yml` には少なくとも以下を置きます。
+
+```yml
+stripe:
+	api:
+		key: sk_test_...
+	webhook:
+		secret: whsec_...
+	checkout:
+		price-id: price_...
+```
+
 Ngrok と Cloudflare を含めた真機联调用に 4 つの窗口をまとめて起動する場合は、项目根目录の `start-dev-env.bat` を実行します。
 
 ```bat

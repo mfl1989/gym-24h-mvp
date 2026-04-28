@@ -43,6 +43,12 @@ public class DebugLoginService {
         return jwtTokenService.issueAuthenticationToken(userId);
     }
 
+    @Transactional
+    public AuthTokenResponse loginWithoutSubscription(UUID userId) {
+        ensureUserExists(userId);
+        return jwtTokenService.issueAuthenticationToken(userId);
+    }
+
     private User ensureUserExists(UUID userIdValue) {
         UserId userId = new UserId(userIdValue);
         var existingUser = userRepository.findById(userId);

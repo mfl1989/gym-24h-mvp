@@ -26,7 +26,7 @@ public class StripeClientImpl implements StripeClient {
     private final String endpointSecret;
 
     public StripeClientImpl(
-            @Value("${stripe.api.secret-key}") String secretKey,
+            @Value("${stripe.api.key:${stripe.api.secret-key:}}") String secretKey,
             @Value("${stripe.webhook.secret}") String endpointSecret
     ) {
         this.secretKey = secretKey;

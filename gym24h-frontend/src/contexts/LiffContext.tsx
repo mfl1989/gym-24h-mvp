@@ -1,4 +1,5 @@
 import liff from '@line/liff'
+import { isAxiosError } from 'axios'
 import api from '../api/axios'
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react'
 
@@ -18,6 +19,10 @@ type AuthTokenPayload = {
 type ApiResponse<T> = {
   success: boolean
   data: T
+}
+
+type MeApiPayload = {
+  displayName: string | null
 }
 
 const LiffContext = createContext<LiffContextValue | undefined>(undefined)
@@ -45,6 +50,29 @@ export function LiffProvider({ children }: PropsWithChildren) {
 
       try {
         if (isLocalDevelopment()) {
+          const existingAuthToken = localStorage.getItem('authToken')
+
+          if (existingAuthToken) {
+            try {
+              await api.get<ApiResponse<MeApiPayload>>('/me')
+
+              if (isMounted) {
+                setIsLoggedIn(true)
+              }
+              return
+            } catch (error) {
+              if (!isMounted) {
+                return
+              }
+
+              localStorage.removeItem('authToken')
+
+              if (!isAxiosError(error) || !error.response) {
+                throw error
+              }
+            }
+          }
+
           const response = await api.post<ApiResponse<AuthTokenPayload>>('/auth/dev-login', {
             userId: DEV_LOGIN_USER_ID,
           })

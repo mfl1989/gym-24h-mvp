@@ -43,6 +43,11 @@ public class AuthController {
         return ApiResponse.ok(debugLoginService.loginOrProvision(request.userId()));
     }
 
+    @PostMapping("/dev-login-no-subscription")
+    public ApiResponse<AuthTokenResponse> devLoginWithoutSubscription(@Valid @RequestBody DebugLoginRequest request) {
+        return ApiResponse.ok(debugLoginService.loginWithoutSubscription(request.userId()));
+    }
+
     @PostMapping("/line-login")
     public ApiResponse<AuthTokenResponse> lineLogin(@Valid @RequestBody LineLoginRequest request) {
         return ApiResponse.ok(lineLoginService.login(request.idToken()));

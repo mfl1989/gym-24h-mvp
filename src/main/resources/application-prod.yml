@@ -1,0 +1,60 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-init-sql: SET TIME ZONE 'UTC'
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    url: ${SPRING_DATASOURCE_URL}
+    user: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:1000ms}
+      repositories:
+        enabled: false
+
+door-lock:
+  mock: ${DOOR_LOCK_MOCK:false}
+  api-url: ${DOOR_LOCK_API_URL}
+
+app:
+  admin:
+    secret: ${APP_ADMIN_SECRET}
+
+line:
+  channel-id: ${LINE_CHANNEL_ID}
+
+stripe:
+  api:
+    key: ${STRIPE_API_KEY}
+    secret-key: ${STRIPE_API_KEY}
+  checkout:
+    success-url: ${STRIPE_CHECKOUT_SUCCESS_URL}
+    cancel-url: ${STRIPE_CHECKOUT_CANCEL_URL}
+    price-id: ${STRIPE_PRICE_ID}
+  reconciliation:
+    lookback-hours: ${STRIPE_RECONCILIATION_LOOKBACK_HOURS:24}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET}
+
+security:
+  jwt:
+    auth-secret: ${JWT_AUTH_SECRET}
+    issuer: ${JWT_AUTH_ISSUER}
+    auth-ttl-seconds: ${JWT_AUTH_TTL_SECONDS:3600}
+  qr:
+    secret: ${QR_TOKEN_SECRET}
+    issuer: ${QR_TOKEN_ISSUER}
+    ttl-seconds: ${QR_TOKEN_TTL_SECONDS:30}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}

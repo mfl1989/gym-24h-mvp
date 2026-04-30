@@ -1,5 +1,6 @@
 param(
-    [switch]$OpenBrowser
+    [switch]$OpenBrowser,
+    [switch]$StartStripeListener
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,6 +23,24 @@ function Stop-ListeningProcess {
             } catch {
                 Write-Warning "Failed to stop PID $processId on port ${Port}: $($_.Exception.Message)"
             }
+        }
+    }
+}
+
+function Stop-CommandProcess {
+    param(
+        [string]$ProcessName,
+        [string]$CommandLinePattern
+    )
+
+    $processes = Get-CimInstance Win32_Process -Filter "Name = '$ProcessName'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like "*$CommandLinePattern*" }
+
+    foreach ($process in $processes) {
+        try {
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop
+        } catch {
+            Write-Warning "Failed to stop $ProcessName PID $($process.ProcessId): $($_.Exception.Message)"
         }
     }
 }
@@ -72,6 +91,7 @@ function Wait-PortListening {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $frontendRoot = Join-Path $repoRoot 'gym24h-frontend'
 $gradleBat = Join-Path $repoRoot 'gradle-8.5\bin\gradle.bat'
+$stripeListenerScript = Join-Path $repoRoot 'scripts\start-stripe-listener.ps1'
 
 if (-not (Test-Path $gradleBat)) {
     throw "Gradle not found: $gradleBat"
@@ -84,6 +104,10 @@ if (-not (Test-Path (Join-Path $frontendRoot 'package.json'))) {
 Write-Host 'Stopping existing local servers on ports 8080 and 5173...'
 Stop-ListeningProcess -Port 8080
 Stop-ListeningProcess -Port 5173
+if ($StartStripeListener) {
+    Write-Host 'Stopping existing Stripe listener windows...'
+    Stop-CommandProcess -ProcessName 'powershell.exe' -CommandLinePattern 'start-stripe-listener.ps1'
+}
 
 $backendCommand = "Set-Location '$repoRoot'; & '$gradleBat' bootRun --args='--spring.profiles.active=local'"
 $frontendCommand = "Set-Location '$frontendRoot'; npm run dev -- --host 0.0.0.0"
@@ -106,6 +130,17 @@ if (-not (Wait-HttpOk -Uris @('http://localhost:5173', 'http://127.0.0.1:5173') 
     Write-Warning 'Frontend process is listening on 5173, but HTTP probe did not return in time. You can still try opening http://localhost:5173 manually.'
 }
 
+$stripeProcess = $null
+if ($StartStripeListener) {
+    if (-not (Test-Path $stripeListenerScript)) {
+        throw "Stripe listener script not found: $stripeListenerScript"
+    }
+
+    $stripeCommand = "Set-Location '$repoRoot'; & '$stripeListenerScript'"
+    Write-Host 'Starting Stripe listener on http://localhost:8080/webhooks/stripe ...'
+    $stripeProcess = Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', $stripeCommand -PassThru
+}
+
 Write-Host ''
 Write-Host 'Local dev environment is ready.' -ForegroundColor Green
 Write-Host 'C-end:           http://localhost:5173/'
@@ -113,6 +148,9 @@ Write-Host 'Admin scanner:   http://localhost:5173/admin/scanner'
 Write-Host 'Admin token:     super-secret-admin-key'
 Write-Host "Backend PID:     $($backendProcess.Id)"
 Write-Host "Frontend PID:    $($frontendProcess.Id)"
+if ($stripeProcess) {
+    Write-Host "Stripe PID:      $($stripeProcess.Id)"
+}
 
 if ($OpenBrowser) {
     Start-Process 'http://localhost:5173/'

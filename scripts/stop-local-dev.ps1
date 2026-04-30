@@ -90,6 +90,12 @@ Stop-ProcessGroup -Label 'frontend' -ProcessNames @('node.exe', 'cmd.exe', 'powe
     "*$($frontendRoot)*--host 0.0.0.0*"
 )
 
+Stop-ProcessGroup -Label 'iot-mock' -ProcessNames @('node.exe', 'powershell.exe', 'cmd.exe') -CommandLinePatterns @(
+    "*$($repoRoot)*scripts\\mock-iot-server.js*",
+    '*mock-iot-server.js*',
+    '*localhost:8081/mock/door-lock/unlock*'
+)
+
 Stop-ProcessGroup -Label 'stripe' -ProcessNames @('stripe.exe', 'powershell.exe') -CommandLinePatterns @(
     '*start-stripe-listener.ps1*',
     '*stripe listen*--forward-to http://localhost:8080/webhooks/stripe*'

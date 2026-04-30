@@ -34,4 +34,4 @@ stripe:
     enabled: false
 
 door-lock:
-  mock: true
+  mock: false

@@ -4,6 +4,8 @@ import com.gym24h.domain.model.subscription.Subscription;
 import com.gym24h.domain.model.subscription.SubscriptionId;
 import com.gym24h.domain.model.user.UserId;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface SubscriptionRepository {
@@ -17,6 +19,8 @@ public interface SubscriptionRepository {
     Optional<Subscription> findLatestByUserId(UserId userId);
 
     Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId);
+
+    List<Subscription> findExpiredActiveSubscriptions(Instant threshold);
 
     Subscription save(Subscription subscription);
 }

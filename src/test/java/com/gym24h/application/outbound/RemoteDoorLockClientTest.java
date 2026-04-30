@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
@@ -83,5 +85,10 @@ class RemoteDoorLockClientTest {
     @EnableRetry
     @Import(AppConfig.class)
     static class RetryTestConfig {
+
+                @Bean
+                RestTemplateBuilder restTemplateBuilder() {
+                        return new RestTemplateBuilder();
+                }
     }
 }

@@ -9,6 +9,7 @@ import com.gym24h.infrastructure.persistence.entity.SubscriptionEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.List;
 
@@ -57,6 +58,17 @@ public class SubscriptionRepositoryImpl implements SubscriptionRepository {
     public Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId) {
         return jpaSubscriptionRepository.findFirstByStripeSubscriptionIdAndDeletedFalse(stripeSubscriptionId)
                 .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Subscription> findExpiredActiveSubscriptions(Instant threshold) {
+        return jpaSubscriptionRepository.findByStatusAndCurrentPeriodEndAtBeforeAndDeletedFalse(
+                        SubscriptionStatus.ACTIVE,
+                        threshold
+                ).stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override
